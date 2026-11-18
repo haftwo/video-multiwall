@@ -20,25 +20,6 @@
     <section>
       <div class="sec-head">
         <div>
-          <p class="eyebrow">Channels</p>
-          <h2>Stream sources</h2>
-        </div>
-        <div class="actions">
-          <button class="btn" id="importBtn">Import CSV / M3U</button>
-          <button class="btn primary" id="addChannelBtn">+ Add channel</button>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>#</th><th>Name</th><th>Category</th><th>Stream URL</th><th>Status</th><th></th></tr></thead>
-          <tbody id="channelRows"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section>
-      <div class="sec-head">
-        <div>
           <p class="eyebrow">Users</p>
           <h2>Who can sign in</h2>
         </div>
@@ -96,6 +77,25 @@
       </div>
       <dl class="kv" id="ssoInfo"></dl>
       <p class="note" style="margin-top:10px">These settings come from the container's environment variables (ENTRA_*, BASE_URL). Change them in the Unraid template and restart the container.</p>
+    </section>
+
+    <section>
+      <div class="sec-head">
+        <div>
+          <p class="eyebrow">Channels</p>
+          <h2>Stream sources</h2>
+        </div>
+        <div class="actions">
+          <button class="btn" id="importBtn">Import CSV / M3U</button>
+          <button class="btn primary" id="addChannelBtn">+ Add channel</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Category</th><th>Stream URL</th><th>Status</th><th></th></tr></thead>
+          <tbody id="channelRows"></tbody>
+        </table>
+      </div>
     </section>
   </main>
 

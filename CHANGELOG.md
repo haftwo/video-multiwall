@@ -2,6 +2,9 @@
 
 The version is in `package.json`. The app shows it in the side panel, the account menu, the admin console header and the sign-in page. The server also reports it at `/api/version`, at `/healthz` and in the container log at start-up.
 
+## 1.5.4 — 2026-11-18
+- Admin console: the stream sources list is now the last section, so users, the sign-in log and single sign-on settings are visible without scrolling past every channel.
+
 ## 1.5.3 — 2026-11-18
 - Removed the header waveform strip (1.5.0–1.5.2). The top bar is back to the logo, name and account menu.
 
