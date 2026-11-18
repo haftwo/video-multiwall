@@ -2,6 +2,9 @@
 
 The version is in `package.json`. The app shows it in the side panel, the account menu, the admin console header and the sign-in page. The server also reports it at `/api/version`, at `/healthz` and in the container log at start-up.
 
+## 1.5.1 — 2026-11-18
+- The header strip is now colour bars with sync. Each scan line steps down from white to yellow, cyan, green, magenta, red and blue, in those colours at their luminance levels. A horizontal sync pulse sits between lines, and every fourth line comes the vertical sync interval of equalising and serrated pulses, in amber.
+
 ## 1.5.0 — 2026-11-18
 - Video waveform strip in the page header. Mirrored bars trace scan lines as a waveform monitor shows them: picture lines, a colour-bar staircase every third line, and the sync pulse between lines. A brighter sweep moves across it, and it stays still when the system asks for reduced motion.
 
