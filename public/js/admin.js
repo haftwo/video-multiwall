@@ -382,11 +382,90 @@
     } catch (e) { $('uError').textContent = e.message; }
   });
 
+  // ============================================================ sign-in log
+  let logOutcome = '';
+  let logOldest = 0;
+  let logTimer;
+
+  // "Chrome on macOS" from a user-agent string (good enough for an audit view).
+  function browserName(ua) {
+    if (!ua) return '—';
+    const b = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Firefox\//.test(ua) ? 'Firefox'
+      : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : /curl\//i.test(ua) ? 'curl' : 'Other';
+    const os = /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Mac OS X/.test(ua) ? 'macOS'
+      : /Windows/.test(ua) ? 'Windows' : /CrOS/.test(ua) ? 'ChromeOS' : /Linux/.test(ua) ? 'Linux' : '';
+    return os ? `${b} on ${os}` : b;
+  }
+  const RESULT = {
+    success: ['Signed in', 'ok'],
+    failed: ['Failed', 'off'],
+    signout: ['Signed out', ''],
+  };
+
+  function logRow(e) {
+    const [label, kind] = RESULT[e.outcome] || [e.outcome, ''];
+    return el('tr', {},
+      el('td', { class: 'when', title: `${e.at} UTC` }, when(e.at)),
+      el('td', {}, el('b', {}, e.displayName || e.username), e.displayName ? el('div', { class: 'note' }, e.username) : null),
+      el('td', {}, e.provider === 'entra' ? 'Microsoft' : 'Password'),
+      el('td', {}, tag(label, kind), e.detail ? el('span', { class: 'why' }, e.detail) : null),
+      el('td', { class: 'ip' }, e.ip || '—'),
+      el('td', { title: e.userAgent }, browserName(e.userAgent)));
+  }
+
+  function logParams(extra = {}) {
+    const q = new URLSearchParams();
+    if (logOutcome) q.set('outcome', logOutcome);
+    const search = $('logSearch').value.trim();
+    if (search) q.set('q', search);
+    for (const [k, v] of Object.entries(extra)) q.set(k, v);
+    return q;
+  }
+
+  async function loadLog({ append = false } = {}) {
+    const q = logParams(append && logOldest ? { before: logOldest } : {});
+    const data = await api(`/api/admin/logins?${q}`);
+    const rows = data.events.map(logRow);
+    if (append) $('logRows').append(...rows);
+    else {
+      $('logRows').replaceChildren(...(rows.length ? rows : [
+        el('tr', {}, el('td', { colspan: 6, class: 'note' }, 'No sign-in activity matches.')),
+      ]));
+    }
+    if (data.events.length) logOldest = data.events[data.events.length - 1].id;
+    $('logMore').hidden = !data.more;
+    $('logKeep').textContent = `Entries are kept for ${data.keepDays} days (LOGIN_LOG_DAYS). Times are in your browser's time zone.`;
+    $('logExport').href = `/api/admin/logins.csv?${logParams()}`;
+
+    const s = data.summary || {};
+    const stat = (n, label, warn) => el('div', { class: `stat${warn && n ? ' warn' : ''}` }, el('b', {}, n || 0), el('span', {}, label));
+    $('logStats').replaceChildren(
+      stat(s.success24h, 'sign-ins, last 24 hours'),
+      stat(s.failed24h, 'failed attempts, last 24 hours', true),
+      stat(s.users30d, 'people signed in, last 30 days'),
+    );
+  }
+
+  $('logChips').addEventListener('click', (ev) => {
+    const b = ev.target.closest('.chip');
+    if (!b) return;
+    logOutcome = b.dataset.v;
+    [...$('logChips').children].forEach((c) => c.classList.toggle('on', c === b));
+    logOldest = 0;
+    loadLog();
+  });
+  $('logSearch').addEventListener('input', () => {
+    clearTimeout(logTimer);
+    logTimer = setTimeout(() => { logOldest = 0; loadLog(); }, 300);
+  });
+  $('logMore').addEventListener('click', () => loadLog({ append: true }));
+  $('logRefresh').addEventListener('click', () => { logOldest = 0; loadLog(); });
+
   // ====================================================================== boot
   const info = await api('/api/me');
   me = info.user;
   document.title = `Admin · ${info.appName}`;
   $('appName').textContent = info.appName;
   $('adminVersion').textContent = `· v${info.version}`;
-  await Promise.all([loadChannels(), loadUsers()]);
+  await Promise.all([loadChannels(), loadUsers(), loadLog()]);
 })();

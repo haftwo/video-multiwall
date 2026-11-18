@@ -235,6 +235,51 @@ app.delete('/api/admin/users/:id', auth.requireAdmin, (req, res) => {
   json(res, { ok: true });
 });
 
+// ---- admin: sign-in log -------------------------------------------------------
+const audit = require('./audit');
+const eventOut = (e) => ({
+  id: e.id, at: e.created_at, userId: e.user_id, username: e.username, displayName: e.display_name,
+  provider: e.provider, outcome: e.outcome, detail: e.detail, ip: e.ip, userAgent: e.user_agent,
+});
+const logQuery = (q) => ({
+  outcome: String(q.outcome || ''),
+  search: String(q.q || '').trim(),
+  before: parseInt(q.before, 10) || 0,
+});
+
+app.get('/api/admin/logins', auth.requireAdmin, (req, res) => {
+  const limit = Math.min(500, parseInt(req.query.limit, 10) || 100);
+  const rows = audit.listLogins({ ...logQuery(req.query), limit: limit + 1 });
+  json(res, {
+    events: rows.slice(0, limit).map(eventOut),
+    more: rows.length > limit,
+    summary: audit.summary(),
+    keepDays: config.loginLogDays,
+  });
+});
+
+app.get('/api/admin/logins.csv', auth.requireAdmin, (req, res) => {
+  const rows = audit.listLogins({ ...logQuery(req.query), before: 0, limit: 100000 });
+  // Quote every field; prefix cells a spreadsheet would treat as a formula.
+  const cell = (v) => {
+    let s = String(v ?? '');
+    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+    return `"${s.replace(/"/g, '""')}"`;
+  };
+  const lines = [['Time (UTC)', 'User', 'Display name', 'Method', 'Result', 'Detail', 'IP address', 'Browser'].map(cell).join(',')];
+  for (const e of rows) {
+    lines.push([e.created_at, e.username, e.display_name, e.provider === 'entra' ? 'Microsoft' : 'Password',
+      e.outcome, e.detail, e.ip, e.user_agent].map(cell).join(','));
+  }
+  const body = `﻿${lines.join('\r\n')}\r\n`;
+  res.writeHead(200, {
+    'Content-Type': 'text/csv; charset=utf-8',
+    'Content-Disposition': `attachment; filename="sign-in-log-${new Date().toISOString().slice(0, 10)}.csv"`,
+    'Cache-Control': 'no-store',
+  });
+  res.end(body);
+});
+
 // ---- start --------------------------------------------------------------------
 const server = http.createServer((req, res) => app.handle(req, res));
 server.listen(config.port, () => {

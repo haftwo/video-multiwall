@@ -55,6 +55,7 @@ module.exports = {
     ? (/^\d+$/.test(env.TRUST_PROXY) ? parseInt(env.TRUST_PROXY, 10) : bool(env.TRUST_PROXY, false))
     : (https ? 1 : false),
   sessionDays: parseInt(env.SESSION_DAYS || '7', 10),
+  loginLogDays: Math.max(1, parseInt(env.LOGIN_LOG_DAYS || '90', 10) || 90),
   localLogin: bool(env.LOCAL_LOGIN_ENABLED, true),
   adminUsername: (env.ADMIN_USERNAME || 'admin').toLowerCase(),
   adminPassword: env.ADMIN_PASSWORD || '',

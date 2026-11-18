@@ -2,6 +2,7 @@ const config = require('./config');
 const { db, hashPassword, verifyPassword } = require('./db');
 const { HttpError, json, redirect, writeSession } = require('./http');
 const entra = require('./entra');
+const { logLogin } = require('./audit');
 
 const publicUser = (u) => ({
   id: u.id,
@@ -39,8 +40,9 @@ function requireAdmin(req) {
   if (req.user.role !== 'admin') throw new HttpError(403, 'Admin only');
 }
 
-function signIn(res, user) {
+function signIn(req, res, user) {
   writeSession(res, { uid: user.id });
+  logLogin(req, { user, provider: user.provider, outcome: 'success' });
   db.prepare("UPDATE users SET last_login = datetime('now') WHERE id = ?").run(user.id);
 }
 
@@ -74,10 +76,13 @@ function register(app) {
   }));
 
   app.post('/api/auth/login', (req, res) => {
-    if (!config.localLogin) throw new HttpError(403, 'Local sign-in is disabled');
-    if (tooMany(req.ip)) throw new HttpError(429, 'Too many attempts. Try again in 15 minutes.');
-
     const username = String(req.body.username || '').trim().toLowerCase();
+    if (!config.localLogin) throw new HttpError(403, 'Local sign-in is disabled');
+    if (tooMany(req.ip)) {
+      logLogin(req, { username, outcome: 'failed', detail: 'Blocked: too many failed attempts from this address' });
+      throw new HttpError(429, 'Too many attempts. Try again in 15 minutes.');
+    }
+
     const password = String(req.body.password || '');
     const user = db.prepare(
       "SELECT * FROM users WHERE username = ? AND provider = 'local' AND enabled = 1"
@@ -85,14 +90,21 @@ function register(app) {
 
     if (!user || !verifyPassword(password, user.password_hash)) {
       recordFail(req.ip);
+      const known = db.prepare("SELECT enabled FROM users WHERE username = ? AND provider = 'local'").get(username);
+      logLogin(req, {
+        username: username || '(blank)',
+        outcome: 'failed',
+        detail: !known ? 'No such user' : !known.enabled ? 'Account disabled' : 'Wrong password',
+      });
       throw new HttpError(401, 'Incorrect username or password');
     }
     attempts.delete(req.ip);
-    signIn(res, user);
+    signIn(req, res, user);
     json(res, { user: publicUser(user) });
   });
 
-  app.post('/api/auth/logout', (_req, res) => {
+  app.post('/api/auth/logout', (req, res) => {
+    if (req.user) logLogin(req, { user: req.user, provider: req.user.provider, outcome: 'signout' });
     writeSession(res, null);
     json(res, { ok: true });
   });
@@ -129,13 +141,18 @@ function register(app) {
     if (!config.entra.enabled) return fail(res, 'Microsoft sign-in is not configured');
     const pending = req.session.oauth;
     writeSession(res, null);
+    let who = '';
+    const deny = (msg) => {
+      logLogin(req, { username: who || '(unknown Microsoft account)', provider: 'entra', outcome: 'failed', detail: msg });
+      return fail(res, msg);
+    };
 
     if (req.query.error) {
-      return fail(res, String(req.query.error_description || req.query.error).slice(0, 200));
+      return deny(String(req.query.error_description || req.query.error).slice(0, 200));
     }
     if (!pending || !req.query.code || req.query.state !== pending.state ||
         Date.now() - pending.at > 10 * 60 * 1000) {
-      return fail(res, 'Sign-in expired or was interrupted. Please try again.');
+      return deny('Sign-in expired or was interrupted. Please try again.');
     }
 
     let claims;
@@ -143,17 +160,19 @@ function register(app) {
       claims = await entra.complete(String(req.query.code), pending, callbackUrl(req));
     } catch (err) {
       console.error('[entra] sign-in failed:', err.message);
+      logLogin(req, { username: '(unknown Microsoft account)', provider: 'entra', outcome: 'failed', detail: `Token check failed: ${err.message}` });
       return fail(res, 'Microsoft sign-in failed. Check the server log for details.');
     }
 
     const oid = claims.oid || claims.sub;
     const email = String(claims.email || claims.preferred_username || '').toLowerCase();
     const name = String(claims.name || email).slice(0, 80);
-    if (!oid || !email) return fail(res, 'Microsoft did not return an account identity');
+    who = email;
+    if (!oid || !email) return deny('Microsoft did not return an account identity');
 
     const domain = email.split('@')[1] || '';
     if (config.entra.allowedDomains.length && !config.entra.allowedDomains.includes(domain)) {
-      return fail(res, 'Your email domain is not allowed to sign in');
+      return deny('Your email domain is not allowed to sign in');
     }
 
     let user = db.prepare(
@@ -174,7 +193,7 @@ function register(app) {
     const shouldBeAdmin = config.entra.adminEmails.includes(email);
     if (!user) {
       if (!config.entra.autoProvision && !shouldBeAdmin) {
-        return fail(res, 'Your account has not been approved. Ask an administrator for access.');
+        return deny('Your account has not been approved. Ask an administrator for access.');
       }
       const taken = db.prepare('SELECT 1 AS x FROM users WHERE username = ?').get(email);
       const info = db.prepare(
@@ -182,12 +201,12 @@ function register(app) {
       ).run(taken ? `${email}#entra` : email, name, email, shouldBeAdmin ? 'admin' : 'user', oid);
       user = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
     } else {
-      if (!user.enabled) return fail(res, 'Your account has been disabled');
+      if (!user.enabled) return deny('Your account has been disabled');
       db.prepare('UPDATE users SET display_name = ?, email = ?, role = ? WHERE id = ?')
         .run(name, email, shouldBeAdmin ? 'admin' : user.role, user.id);
     }
 
-    signIn(res, user);
+    signIn(req, res, user);
     redirect(res, '/');
   });
 }

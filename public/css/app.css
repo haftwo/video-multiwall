@@ -310,3 +310,16 @@ td.acts .btn { margin-left: 4px; }
 .login-version { font-family: var(--mono); text-align: center; opacity: 0.6; }
 .empty h1 { font-size: clamp(30px, 5vw, 52px); white-space: nowrap; }
 .empty-inner { max-width: 560px; }
+
+/* ---- sign-in log ---- */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.stat { padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.stat b { display: block; font: 600 22px var(--mono); }
+.stat span { font-size: 12px; color: var(--muted); }
+.stat.warn b { color: #ff8080; }
+.log-tools { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 10px; }
+.log-tools input { max-width: 280px; height: 32px; }
+.log-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+td.when { white-space: nowrap; font: 12px var(--mono); color: var(--muted); }
+td.ip { font: 12px var(--mono); }
+td .why { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }

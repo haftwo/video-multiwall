@@ -10,6 +10,7 @@ A self-hosted multi-wall for HLS (`.m3u8`) streams. Viewers sign in, pick from t
 - **Channels**: preset by an admin in the admin console (add one at a time, or import a CSV or M3U file). Viewers can only choose from that list.
 - **Sign-in**: local username/password accounts, Microsoft Entra ID (Azure AD) single sign-on, or both.
 - **Roles**: administrators manage channels and users; viewers only see the wall.
+- **Sign-in log**: the admin console lists who signed in, failed attempts and why, and sign-outs, with IP address and browser. It can be filtered, searched and exported to CSV.
 - **Packaging**: one small Docker image, one data folder, no external database.
 
 ## Keyboard shortcuts
@@ -173,6 +174,7 @@ All settings are environment variables; see `.env.example` for the annotated lis
 | `MAX_PANELS` | `16` | Panel limit per wall (1–36) |
 | `APP_NAME` | `MultiPlayer 2000` | Name shown in the UI |
 | `SESSION_DAYS` | `7` | How long a sign-in lasts |
+| `LOGIN_LOG_DAYS` | `90` | How long the admin sign-in log keeps entries |
 | `SEED_DEMO_CHANNELS` | `true` | Add demo streams on first start |
 | `PORT` | `8080` | Port inside the container |
 

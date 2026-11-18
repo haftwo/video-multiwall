@@ -57,6 +57,39 @@
     <section>
       <div class="sec-head">
         <div>
+          <p class="eyebrow">Activity</p>
+          <h2>Sign-in log</h2>
+        </div>
+        <div class="actions">
+          <button class="btn" id="logRefresh">Refresh</button>
+          <a class="btn" id="logExport" href="/api/admin/logins.csv" download>Export CSV</a>
+        </div>
+      </div>
+      <div class="stats" id="logStats"></div>
+      <div class="log-tools">
+        <div class="chips" id="logChips">
+          <button class="chip on" data-v="">All</button>
+          <button class="chip" data-v="success">Signed in</button>
+          <button class="chip" data-v="failed">Failed</button>
+          <button class="chip" data-v="signout">Signed out</button>
+        </div>
+        <input type="search" id="logSearch" placeholder="Search user or IP address" aria-label="Search the sign-in log">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>When</th><th>User</th><th>Method</th><th>Result</th><th>IP address</th><th>Browser</th></tr></thead>
+          <tbody id="logRows"></tbody>
+        </table>
+      </div>
+      <div class="log-foot">
+        <button class="btn small" id="logMore" hidden>Load older entries</button>
+        <p class="note" id="logKeep"></p>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head">
+        <div>
           <p class="eyebrow">Single sign-on</p>
           <h2>Microsoft Entra ID</h2>
         </div>

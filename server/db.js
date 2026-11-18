@@ -36,6 +36,20 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS login_events (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+    user_id      INTEGER,
+    username     TEXT NOT NULL DEFAULT '',
+    display_name TEXT NOT NULL DEFAULT '',
+    provider     TEXT NOT NULL DEFAULT 'local',
+    outcome      TEXT NOT NULL CHECK (outcome IN ('success','failed','signout')),
+    detail       TEXT NOT NULL DEFAULT '',
+    ip           TEXT NOT NULL DEFAULT '',
+    user_agent   TEXT NOT NULL DEFAULT ''
+  );
+  CREATE INDEX IF NOT EXISTS login_events_created ON login_events(created_at);
+
   CREATE TABLE IF NOT EXISTS layouts (
     user_id    INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     data       TEXT NOT NULL,
