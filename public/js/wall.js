@@ -9,6 +9,9 @@
     swap: svg('<path d="M3 7h14"/><path d="m13 3 4 4-4 4"/><path d="M21 17H7"/><path d="m11 13-4 4 4 4"/>'),
     full: svg('<path d="M8 3H3v5"/><path d="M16 3h5v5"/><path d="M8 21H3v-5"/><path d="M16 21h5v-5"/>'),
     close: svg('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'),
+    gridAdd: svg('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7"/><path d="M14 17.5h7"/>'),
+    gridRemove: svg('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7"/>'),
+    share: svg('<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4"/><path d="m15.4 6.5-6.8 4"/>'),
   };
 
   const wall = $('wall');
@@ -58,13 +61,65 @@
       p.node.classList.toggle('selected', p === selected);
     });
     $('count').textContent = n ? `${n} / ${maxPanels} panels` : '';
-    $('addBtn').disabled = n >= maxPanels;
     layoutGrid();
+    updateSide();
   }
 
   function select(p) {
     selected = p || null;
     panels.forEach((x) => x.node.classList.toggle('selected', x === selected));
+    updateSide();
+  }
+
+  // ----------------------------------------------------------------- side panel
+  // The volume controls act on the panel you are listening to: the first
+  // unmuted one, otherwise the selected one, otherwise panel 1.
+  const audioTarget = () => panels.find((p) => !p.muted) || selected || panels[0] || null;
+
+  function updateSide() {
+    const t = audioTarget();
+    const live = t && !t.muted;
+    const mute = $('sideMute'), vol = $('sideVol');
+    mute.innerHTML = live ? ICON.volume : ICON.muted;
+    mute.classList.toggle('on', !!live);
+    mute.disabled = !t;
+    mute.title = !t ? 'No panels' : live ? `Mute panel ${panels.indexOf(t) + 1}` : `Unmute panel ${panels.indexOf(t) + 1}`;
+    mute.setAttribute('aria-label', mute.title);
+    vol.disabled = !t;
+    vol.value = t ? Math.round(t.volume * 100) : 0;
+    $('sideTarget').textContent = t ? `Panel ${panels.indexOf(t) + 1}` : '';
+
+    $('gridAdd').disabled = panels.length >= maxPanels;
+    $('gridRemove').disabled = panels.length === 0;
+    $('shareBtn').disabled = panels.length === 0;
+
+    const audio = $('sideAudio');
+    if (!panels.length) {
+      audio.replaceChildren(el('span', { class: 'none' }, 'No panels'));
+      return;
+    }
+    audio.replaceChildren(...panels.map((p, i) => el('button', {
+      class: `${p.muted ? '' : 'on'}${p === selected ? ' sel' : ''}`,
+      title: `${p.muted ? 'Listen to' : 'Mute'} panel ${i + 1}${byId.get(p.channelId) ? `: ${byId.get(p.channelId).name}` : ''}`,
+      'aria-pressed': String(!p.muted),
+      onclick: () => {
+        select(p);
+        const onlyThis = !p.muted && panels.every((x) => x === p || x.muted);
+        if (onlyThis) setMuted(p, true);
+        else solo(p);
+      },
+    }, i + 1)));
+  }
+
+  function setSideCollapsed(collapsed) {
+    $('side').classList.toggle('collapsed', collapsed);
+    const t = $('sideToggle');
+    t.textContent = collapsed ? '›' : '‹';
+    t.title = collapsed ? 'Show controls (B)' : 'Hide controls (B)';
+    t.setAttribute('aria-label', collapsed ? 'Show controls' : 'Hide controls');
+    t.setAttribute('aria-expanded', String(!collapsed));
+    try { localStorage.setItem('mw.sideCollapsed', collapsed ? '1' : '0'); } catch { /* storage off */ }
+    layoutGrid();
   }
 
   // ---------------------------------------------------------------------- audio
@@ -77,6 +132,7 @@
     p.muteBtn.setAttribute('aria-label', p.muted ? 'Unmute' : 'Mute');
     p.muteBtn.title = p.muted ? 'Unmute (M)' : 'Mute (M)';
     p.volEl.value = Math.round(p.volume * 100);
+    updateSide();
   }
 
   function setMuted(p, muted) {
@@ -338,13 +394,57 @@
   $('pickerClose').addEventListener('click', () => picker.close());
   picker.addEventListener('click', (ev) => { if (ev.target === picker) picker.close(); });
 
-  // -------------------------------------------------------------------- top bar
-  $('addBtn').addEventListener('click', () => openPicker());
+  // ----------------------------------------------------------- side panel wiring
   $('emptyAdd').addEventListener('click', () => openPicker());
+  $('gridAdd').innerHTML = ICON.gridAdd;
+  $('gridRemove').innerHTML = ICON.gridRemove;
+  $('shareBtn').innerHTML = ICON.share;
+  $('gridAdd').addEventListener('click', () => openPicker());
+  $('gridRemove').addEventListener('click', () => { if (panels.length) removePanel(panels[panels.length - 1]); });
+
+  $('sideMute').addEventListener('click', () => {
+    const t = audioTarget();
+    if (t) setMuted(t, !t.muted);
+  });
+  $('sideVol').addEventListener('input', () => {
+    const t = audioTarget();
+    if (!t) return;
+    t.volume = $('sideVol').value / 100;
+    t.muted = t.volume === 0;
+    syncAudio(t);
+    if (!t.muted) t.video.play().catch(() => {});
+    save();
+  });
+
+  $('sideToggle').addEventListener('click', () => setSideCollapsed(!$('side').classList.contains('collapsed')));
+  let startCollapsed = matchMedia('(max-width: 640px)').matches;
+  try {
+    const v = localStorage.getItem('mw.sideCollapsed');
+    if (v !== null) startCollapsed = v === '1';
+  } catch { /* storage off */ }
+  setSideCollapsed(startCollapsed);
+
+  // Options menu (placed with fixed positioning so the narrow panel cannot clip it)
+  const optionsBtn = $('optionsBtn'), optionsMenu = $('optionsMenu');
+  const closeOptions = () => { optionsMenu.hidden = true; optionsBtn.setAttribute('aria-expanded', 'false'); };
+  optionsBtn.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    if (!optionsMenu.hidden) return closeOptions();
+    const r = optionsBtn.getBoundingClientRect();
+    optionsMenu.style.left = `${Math.round(r.left)}px`;
+    optionsMenu.style.bottom = `${Math.round(window.innerHeight - r.top + 6)}px`;
+    optionsMenu.hidden = false;
+    optionsBtn.setAttribute('aria-expanded', 'true');
+  });
+  optionsMenu.addEventListener('click', closeOptions);
+  document.addEventListener('click', closeOptions);
+
   $('muteAllBtn').addEventListener('click', () => {
     panels.forEach((p) => { p.muted = true; syncAudio(p); });
     save();
   });
+  $('keysBtn').addEventListener('click', () => $('keysDialog').showModal());
+  $('keysClose').addEventListener('click', () => $('keysDialog').close());
 
   const toggleWallFs = () => {
     if (document.fullscreenElement) document.exitFullscreen();
@@ -352,8 +452,35 @@
   };
   $('wallFsBtn').addEventListener('click', toggleWallFs);
   document.addEventListener('fullscreenchange', () => {
-    $('wallFsBtn').textContent = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen';
+    $('wallFsBtn').textContent = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen wall';
     layoutGrid();
+  });
+
+  // Share: the link carries the channel IDs in order, plus which panel has sound.
+  function shareLink() {
+    const url = new URL('/', location.origin);
+    url.searchParams.set('wall', panels.map((p) => p.channelId ?? 0).join('.'));
+    const heard = panels.findIndex((p) => !p.muted);
+    if (heard >= 0) url.searchParams.set('audio', String(heard + 1));
+    return url.href;
+  }
+  $('shareBtn').addEventListener('click', () => {
+    $('shareUrl').value = shareLink();
+    $('shareCopy').textContent = 'Copy link';
+    $('shareDialog').showModal();
+    $('shareUrl').select();
+  });
+  $('shareClose').addEventListener('click', () => $('shareDialog').close());
+  $('shareCopy').addEventListener('click', async () => {
+    const input = $('shareUrl');
+    try {
+      await navigator.clipboard.writeText(input.value);
+    } catch {
+      // The clipboard API needs https; on a plain-http LAN address fall back.
+      input.select();
+      document.execCommand('copy');
+    }
+    $('shareCopy').textContent = 'Copied';
   });
 
   // In fullscreen the bar and cursor hide until the pointer moves.
@@ -405,6 +532,7 @@
     if (/^[1-9]$/.test(k)) { const p = panels[Number(k) - 1]; if (p) select(p); return; }
     if (k === 'a') { ev.preventDefault(); openPicker(); return; }
     if (k === 'w') { toggleWallFs(); return; }
+    if (k === 'b') { setSideCollapsed(!$('side').classList.contains('collapsed')); return; }
     if (!selected) return;
     if (k === 'm') setMuted(selected, !selected.muted);
     else if (k === 's') solo(selected);
@@ -436,7 +564,32 @@
     }
 
     const saved = await api('/api/layout');
-    (saved.panels || []).forEach((p) => addPanel(p, { persist: false }));
+
+    // A shared link (?wall=12.7.31&audio=2) replaces the wall. The login page
+    // keeps the link in sessionStorage if the visitor had to sign in first.
+    let shared = new URLSearchParams(location.search);
+    if (!shared.has('wall')) {
+      try { shared = new URLSearchParams(sessionStorage.getItem('mw.sharedWall') || ''); } catch { /* storage off */ }
+    }
+    try { sessionStorage.removeItem('mw.sharedWall'); } catch { /* storage off */ }
+    const sharedIds = (shared.get('wall') || '').split('.').filter(Boolean).map(Number);
+    if (location.search) history.replaceState(null, '', '/');
+
+    if (sharedIds.length) {
+      const known = sharedIds.filter((id) => byId.has(id));
+      const heard = parseInt(shared.get('audio') || '0', 10);
+      if (known.length < sharedIds.length) {
+        toast(`${sharedIds.length - known.length} shared channel(s) are not available on this server`);
+      }
+      sharedIds.forEach((id, i) => {
+        if (byId.has(id) && panels.length < maxPanels) {
+          addPanel({ channelId: id, muted: i !== heard - 1, volume: 1 }, { persist: false });
+        }
+      });
+      save();
+    } else {
+      (saved.panels || []).forEach((p) => addPanel(p, { persist: false }));
+    }
     render();
   } catch (e) {
     console.error(e);

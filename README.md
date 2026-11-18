@@ -3,6 +3,8 @@
 A self-hosted multi-wall for HLS (`.m3u8`) streams. Viewers sign in, pick from the channels an admin has set up, and build their own wall of live panels.
 
 - **Wall**: add and remove panels, per-panel mute and volume, drag to rearrange, fullscreen a panel or the whole wall. Each user's wall is saved and restored on their next visit.
+- **Side panel** (collapsible, remembered per browser): volume and mute for the panel you are listening to, grid +/− to add or remove panels, numbered audio buttons to pick which panel you hear, a share link, and an Options menu (mute all, fullscreen wall, remove all, shortcuts).
+- **Share links**: the share button makes a link holding the wall's channels, their order and which panel has sound. Anyone with an account on the same server who opens it gets that wall (after signing in, if they need to).
 - **Channels**: preset by an admin in the admin console (add one at a time or paste an M3U playlist). Viewers can only choose from that list.
 - **Sign-in**: local username/password accounts, Microsoft Entra ID (Azure AD) single sign-on, or both.
 - **Roles**: administrators manage channels and users; viewers only see the wall.
@@ -18,6 +20,7 @@ A self-hosted multi-wall for HLS (`.m3u8`) streams. Viewers sign in, pick from t
 | `S` | Solo: unmute the selected panel and mute the rest |
 | `F` | Fullscreen the selected panel (double-click also works) |
 | `W` | Fullscreen the whole wall |
+| `B` | Show / hide the side panel |
 
 Panels you can currently hear are marked with an amber strip along the bottom edge.
 

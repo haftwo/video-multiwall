@@ -2,7 +2,14 @@
   const $ = (id) => document.getElementById(id);
   const error = $('error');
 
-  const fromQuery = new URLSearchParams(location.search).get('error');
+  const query = new URLSearchParams(location.search);
+  if (query.has('wall')) {
+    // Remember a shared-wall link through either sign-in route (password or Microsoft).
+    const keep = new URLSearchParams({ wall: query.get('wall'), audio: query.get('audio') || '' });
+    try { sessionStorage.setItem('mw.sharedWall', keep.toString()); } catch { /* storage off */ }
+    history.replaceState(null, '', '/login');
+  }
+  const fromQuery = query.get('error');
   if (fromQuery) {
     error.textContent = fromQuery;
     history.replaceState(null, '', '/login');

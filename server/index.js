@@ -37,7 +37,14 @@ const view = (name) => path.join(root, 'views', `${name}.html`);
 
 app.get('/healthz', (_req, res) => json(res, { ok: true }));
 app.get('/login', (req, res) => (req.user ? redirect(res, '/') : sendFile(res, view('login'))));
-app.get('/', (req, res) => (req.user ? sendFile(res, view('wall')) : redirect(res, '/login')));
+app.get('/', (req, res) => {
+  if (req.user) return sendFile(res, view('wall'));
+  // Keep a shared-wall link (?wall=...) across the sign-in page.
+  const shared = req.query.wall
+    ? `?${new URLSearchParams({ wall: req.query.wall, ...(req.query.audio ? { audio: req.query.audio } : {}) })}`
+    : '';
+  redirect(res, `/login${shared}`);
+});
 app.get('/admin', (req, res) => {
   if (!req.user) return redirect(res, '/login');
   if (req.user.role !== 'admin') return redirect(res, '/');
