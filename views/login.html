@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="login-page">
+  <main class="login-card">
+    <div>
+      <p class="eyebrow"><span class="tally"></span>&nbsp; Live</p>
+      <h1 id="appName">MultiWall</h1>
+    </div>
+
+    <p class="error" id="error" role="alert"></p>
+
+    <a class="btn ms-btn" id="msBtn" href="/auth/microsoft" hidden>
+      <svg viewBox="0 0 21 21" aria-hidden="true"><path fill="#f25022" d="M0 0h10v10H0z"/><path fill="#7fba00" d="M11 0h10v10H11z"/><path fill="#00a4ef" d="M0 11h10v10H0z"/><path fill="#ffb900" d="M11 11h10v10H11z"/></svg>
+      Sign in with Microsoft
+    </a>
+
+    <div class="divider" id="divider" hidden>or</div>
+
+    <form id="form" hidden>
+      <label class="field">Username
+        <input type="text" id="username" autocomplete="username" autocapitalize="none" required>
+      </label>
+      <label class="field">Password
+        <input type="password" id="password" autocomplete="current-password" required>
+      </label>
+      <button class="btn primary big" type="submit" id="submit">Sign in</button>
+    </form>
+  </main>
+  <script src="/js/common.js"></script>
+  <script src="/js/login.js"></script>
+</body>
+</html>

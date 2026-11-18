@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="/"><span class="tally"></span><span id="appName">MultiWall</span></a>
+    <span class="count">Admin console</span>
+    <span class="spacer"></span>
+    <a class="btn" href="/">Back to wall</a>
+  </header>
+
+  <main class="admin-main">
+    <section>
+      <div class="sec-head">
+        <div>
+          <p class="eyebrow">Channels</p>
+          <h2>Stream sources</h2>
+        </div>
+        <div class="actions">
+          <button class="btn" id="importBtn">Import M3U</button>
+          <button class="btn primary" id="addChannelBtn">+ Add channel</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Category</th><th>Stream URL</th><th>Status</th><th></th></tr></thead>
+          <tbody id="channelRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head">
+        <div>
+          <p class="eyebrow">Users</p>
+          <h2>Who can sign in</h2>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="addUserBtn">+ Add user</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>User</th><th>Sign-in</th><th>Role</th><th>Status</th><th>Last sign-in</th><th></th></tr></thead>
+          <tbody id="userRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head">
+        <div>
+          <p class="eyebrow">Single sign-on</p>
+          <h2>Microsoft Entra ID</h2>
+        </div>
+      </div>
+      <dl class="kv" id="ssoInfo"></dl>
+      <p class="note" style="margin-top:10px">These settings come from the container's environment variables (ENTRA_*, BASE_URL). Change them in the Unraid template and restart the container.</p>
+    </section>
+  </main>
+
+  <!-- channel editor -->
+  <dialog id="channelDialog">
+    <form class="dlg" id="channelForm">
+      <div class="dlg-head"><h2 id="channelTitle">Add channel</h2></div>
+      <label class="field">Name
+        <input type="text" id="chName" maxlength="80" required>
+      </label>
+      <label class="field">HLS stream URL (.m3u8)
+        <input type="url" id="chUrl" placeholder="https://example.com/live/stream.m3u8" required>
+      </label>
+      <div class="row2">
+        <label class="field">Category
+          <input type="text" id="chCategory" maxlength="40" list="catList" placeholder="News">
+          <datalist id="catList"></datalist>
+        </label>
+        <label class="field">Sort order
+          <input type="number" id="chSort" value="0" step="1">
+        </label>
+      </div>
+      <label class="field">Logo image URL (optional)
+        <input type="url" id="chLogo" placeholder="https://example.com/logo.png">
+      </label>
+      <label class="check"><input type="checkbox" id="chEnabled" checked>
+        <span>Enabled<small>Disabled channels are hidden from viewers.</small></span>
+      </label>
+      <label class="check"><input type="checkbox" id="chProxy">
+        <span>Relay through this server<small>Turn on if the stream will not play directly: no CORS headers, an http:// stream on an https:// site, or a source only this server can reach. Uses this server's bandwidth for every viewer.</small></span>
+      </label>
+      <video class="preview" id="chPreview" muted playsinline controls hidden></video>
+      <p class="note" id="chPreviewNote" hidden></p>
+      <p class="error" id="chError" role="alert"></p>
+      <div class="dlg-foot">
+        <button class="btn" type="button" id="chTest">Test stream</button>
+        <span style="flex:1"></span>
+        <button class="btn" type="button" id="chCancel">Cancel</button>
+        <button class="btn primary" type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- M3U import -->
+  <dialog id="importDialog" class="wide">
+    <form class="dlg" id="importForm">
+      <div class="dlg-head"><h2>Import an M3U playlist</h2></div>
+      <p class="note">Paste the contents of an .m3u / .m3u8 channel list. Names, <code>group-title</code> and <code>tvg-logo</code> are picked up from each #EXTINF line.</p>
+      <textarea id="importText" rows="12" placeholder='#EXTM3U&#10;#EXTINF:-1 tvg-logo="https://…/logo.png" group-title="News",Channel name&#10;https://example.com/live/stream.m3u8' required></textarea>
+      <label class="check"><input type="checkbox" id="importProxy">
+        <span>Relay all imported channels through this server</span>
+      </label>
+      <p class="error" id="importError" role="alert"></p>
+      <div class="dlg-foot">
+        <button class="btn" type="button" id="importCancel">Cancel</button>
+        <button class="btn primary" type="submit" id="importSubmit">Import</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- user editor -->
+  <dialog id="userDialog">
+    <form class="dlg" id="userForm">
+      <div class="dlg-head"><h2 id="userTitle">Add user</h2></div>
+      <label class="field" id="uProviderWrap">Sign-in method
+        <select id="uProvider">
+          <option value="local">Username and password</option>
+          <option value="entra">Microsoft account (pre-approve by email)</option>
+        </select>
+      </label>
+      <label class="field" id="uUsernameWrap">Username
+        <input type="text" id="uUsername" maxlength="60" autocapitalize="none" autocomplete="off">
+      </label>
+      <label class="field" id="uEmailWrap" hidden>Work email
+        <input type="email" id="uEmail" autocomplete="off">
+      </label>
+      <label class="field">Display name
+        <input type="text" id="uDisplay" maxlength="80" autocomplete="off">
+      </label>
+      <label class="field" id="uPasswordWrap"><span id="uPasswordLabel">Password (8+ characters)</span>
+        <input type="password" id="uPassword" autocomplete="new-password" minlength="8">
+      </label>
+      <label class="field">Role
+        <select id="uRole">
+          <option value="user">Viewer</option>
+          <option value="admin">Administrator</option>
+        </select>
+      </label>
+      <p class="error" id="uError" role="alert"></p>
+      <div class="dlg-foot">
+        <button class="btn" type="button" id="uCancel">Cancel</button>
+        <button class="btn primary" type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/vendor/hls.min.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

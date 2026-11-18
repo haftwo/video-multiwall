@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>MultiWall</Name>
+  <Repository>multiwall:latest</Repository>
+  <Registry/>
+  <Network>bridge</Network>
+  <Privileged>false</Privileged>
+  <Shell>sh</Shell>
+  <Overview>Self-hosted HLS multi-wall video viewer with local and Microsoft Entra ID sign-in. The image is built locally (see README), so "update available" checks do not apply.</Overview>
+  <Category>MediaApp:Video</Category>
+  <WebUI>http://[IP]:[PORT:8080]/</WebUI>
+  <Config Name="Web UI port" Target="8080" Default="8080" Mode="tcp" Description="Port for the web interface." Type="Port" Display="always" Required="true" Mask="false">8080</Config>
+  <Config Name="Data" Target="/data" Default="/mnt/user/appdata/multiwall" Mode="rw" Description="Database (users, channels, saved walls) and the session secret." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/multiwall</Config>
+  <Config Name="Admin username" Target="ADMIN_USERNAME" Default="admin" Mode="" Description="First admin account. Only used the first time the container starts." Type="Variable" Display="always" Required="false" Mask="false">admin</Config>
+  <Config Name="Admin password" Target="ADMIN_PASSWORD" Default="" Mode="" Description="First admin password (8+ characters). Leave blank to have one generated and printed in the container log." Type="Variable" Display="always" Required="false" Mask="true"/>
+  <Config Name="Base URL" Target="BASE_URL" Default="" Mode="" Description="Public address, e.g. https://wall.example.com (no trailing slash). Required for Microsoft sign-in and must be https." Type="Variable" Display="always" Required="false" Mask="false"/>
+  <Config Name="Entra tenant ID" Target="ENTRA_TENANT_ID" Default="" Mode="" Description="Directory (tenant) ID. Leave the three Entra fields blank for local accounts only." Type="Variable" Display="always" Required="false" Mask="false"/>
+  <Config Name="Entra client ID" Target="ENTRA_CLIENT_ID" Default="" Mode="" Description="Application (client) ID of the app registration." Type="Variable" Display="always" Required="false" Mask="false"/>
+  <Config Name="Entra client secret" Target="ENTRA_CLIENT_SECRET" Default="" Mode="" Description="Client secret VALUE (not the secret ID)." Type="Variable" Display="always" Required="false" Mask="true"/>
+  <Config Name="Entra admin emails" Target="ENTRA_ADMIN_EMAILS" Default="" Mode="" Description="Comma-separated emails that become administrators when they sign in with Microsoft." Type="Variable" Display="always" Required="false" Mask="false"/>
+  <Config Name="Entra auto-provision" Target="ENTRA_AUTO_PROVISION" Default="true" Mode="" Description="true: anyone in the tenant can sign in as a viewer. false: only users pre-approved in the admin console." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
+  <Config Name="Entra allowed domains" Target="ENTRA_ALLOWED_DOMAINS" Default="" Mode="" Description="Comma-separated email domains allowed to sign in. Blank allows the whole tenant." Type="Variable" Display="advanced" Required="false" Mask="false"/>
+  <Config Name="Local login enabled" Target="LOCAL_LOGIN_ENABLED" Default="true" Mode="" Description="Set false to force Microsoft sign-in only. Keep true until SSO is proven to work." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
+  <Config Name="Max panels" Target="MAX_PANELS" Default="16" Mode="" Description="Largest number of panels a user can put on their wall (1-36)." Type="Variable" Display="advanced" Required="false" Mask="false">16</Config>
+  <Config Name="App name" Target="APP_NAME" Default="MultiWall" Mode="" Description="Name shown in the header and on the sign-in page." Type="Variable" Display="advanced" Required="false" Mask="false">MultiWall</Config>
+  <Config Name="Seed demo channels" Target="SEED_DEMO_CHANNELS" Default="true" Mode="" Description="Add three public test streams on first start." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
+</Container>

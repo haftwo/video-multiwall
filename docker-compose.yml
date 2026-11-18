@@ -1,0 +1,13 @@
+services:
+  multiwall:
+    build: .
+    image: multiwall:latest
+    container_name: multiwall
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      # On Unraid. Elsewhere, any folder writable by uid 99 / gid 100 works.
+      - /mnt/user/appdata/multiwall:/data
+    env_file:
+      - .env

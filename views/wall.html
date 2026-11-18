@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MultiWall</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="wall-page">
+  <header class="bar">
+    <a class="brand" href="/"><span class="tally"></span><span id="appName">MultiWall</span></a>
+    <span class="count hide-sm" id="count"></span>
+    <span class="spacer"></span>
+    <button class="btn primary" id="addBtn" title="Add a panel (A)">+ Add panel</button>
+    <button class="btn hide-sm" id="muteAllBtn" title="Mute every panel">Mute all</button>
+    <button class="btn hide-sm" id="wallFsBtn" title="Fullscreen wall (W)">Fullscreen</button>
+    <div class="menu">
+      <button class="btn" id="userBtn" aria-haspopup="true" aria-expanded="false"></button>
+      <div class="menu-pop" id="userMenu" hidden>
+        <a href="/admin" id="adminLink" hidden>Admin console</a>
+        <button id="pwBtn" hidden>Change password</button>
+        <button id="clearBtn">Remove all panels</button>
+        <button id="logoutBtn">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wall" id="wall" hidden></main>
+
+  <section class="empty" id="empty" hidden>
+    <div class="empty-inner">
+      <p class="eyebrow"><span class="tally"></span>&nbsp; Live</p>
+      <h1 id="emptyTitle">MultiWall</h1>
+      <p id="emptyText">Build a wall of live streams. Add a panel, pick a channel, repeat.</p>
+      <button class="btn primary big" id="emptyAdd">Pick your first channel</button>
+      <div class="keys">
+        <span><kbd>1</kbd>–<kbd>9</kbd></span><span>Select a panel</span>
+        <span><kbd>M</kbd></span><span>Mute / unmute selected</span>
+        <span><kbd>S</kbd></span><span>Solo audio on selected</span>
+        <span><kbd>F</kbd></span><span>Fullscreen selected</span>
+        <span><kbd>A</kbd></span><span>Add a panel</span>
+      </div>
+      <p class="note">Drag a panel by its title to rearrange.</p>
+    </div>
+  </section>
+
+  <dialog id="picker" class="wide">
+    <div class="dlg">
+      <div class="dlg-head">
+        <h2 id="pickerTitle">Add a channel</h2>
+        <button class="btn small" id="pickerClose">Close</button>
+      </div>
+      <input type="search" id="pickerSearch" placeholder="Search channels" aria-label="Search channels">
+      <div class="chips" id="pickerChips"></div>
+      <div class="ch-grid" id="pickerGrid"></div>
+      <p class="note" id="pickerEmpty" hidden>No channels match.</p>
+    </div>
+  </dialog>
+
+  <dialog id="pwDialog">
+    <form class="dlg" id="pwForm">
+      <div class="dlg-head"><h2>Change password</h2></div>
+      <label class="field">Current password
+        <input type="password" id="pwCurrent" autocomplete="current-password" required>
+      </label>
+      <label class="field">New password (8+ characters)
+        <input type="password" id="pwNext" autocomplete="new-password" minlength="8" required>
+      </label>
+      <p class="error" id="pwError" role="alert"></p>
+      <div class="dlg-foot">
+        <button class="btn" type="button" id="pwCancel">Cancel</button>
+        <button class="btn primary" type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/vendor/hls.min.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/wall.js"></script>
+</body>
+</html>
