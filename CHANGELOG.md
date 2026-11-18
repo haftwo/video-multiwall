@@ -2,6 +2,9 @@
 
 The version is in `package.json`. The app shows it in the side panel, the account menu, the admin console header and the sign-in page. The server also reports it at `/api/version`, at `/healthz` and in the container log at start-up.
 
+## 1.5.3 — 2026-11-18
+- Removed the header waveform strip (1.5.0–1.5.2). The top bar is back to the logo, name and account menu.
+
 ## 1.5.2 — 2026-11-18
 - The header strip is now a waveform-monitor trace of composite colour bars. Each line has a front porch, a horizontal sync dip below blanking, colour burst, then the seven bars as coloured chroma bands around their luminance. Every fourth line comes the vertical interval: equalising pulses, serrated vertical sync, equalising pulses. The trace scrolls slowly, and stays still when the system asks for reduced motion.
 

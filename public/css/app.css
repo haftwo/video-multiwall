@@ -323,22 +323,3 @@ td.acts .btn { margin-left: 4px; }
 td.when { white-space: nowrap; font: 12px var(--mono); color: var(--muted); }
 td.ip { font: 12px var(--mono); }
 td .why { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
-
-/* ---- header waveform strip ---- */
-.bar-wave { flex: 1; min-width: 0; height: 32px; margin: 0 18px; overflow: hidden;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-          mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
-.bar-wave svg { display: block; overflow: visible; }
-.bar-wave .wave-grat line { stroke: #ffffff; stroke-opacity: 0.07; stroke-width: 1; stroke-dasharray: 2 3; }
-.bar-wave .wave-bands { opacity: 0.55; }
-.bar-wave .wave-trace {
-  fill: none; stroke: #d8f3ff; stroke-width: 1.2; stroke-linejoin: round;
-  filter: drop-shadow(0 0 2px rgba(90, 200, 255, 0.75));
-}
-.bar-wave .wave-scroll { animation: wave-scroll 9s linear infinite; }
-@keyframes wave-scroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(calc(-1 * var(--wave-period, 600px))); }
-}
-@media (prefers-reduced-motion: reduce) { .bar-wave .wave-scroll { animation: none; } }
-@media (max-width: 640px) { .bar-wave { visibility: hidden; margin: 0 6px; } }
