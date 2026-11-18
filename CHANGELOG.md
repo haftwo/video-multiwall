@@ -2,6 +2,9 @@
 
 The version is in `package.json`. The app shows it in the side panel, the account menu, the admin console header and the sign-in page. The server also reports it at `/api/version`, at `/healthz` and in the container log at start-up.
 
+## 1.5.0 — 2026-11-18
+- Video waveform strip in the page header. Mirrored bars trace scan lines as a waveform monitor shows them: picture lines, a colour-bar staircase every third line, and the sync pulse between lines. A brighter sweep moves across it, and it stays still when the system asks for reduced motion.
+
 ## 1.4.0 — 2026-11-18
 - Sign-in log in the admin console. It records every sign-in and failed attempt (password or Microsoft, with the reason) and every sign-out, with the IP address and browser. It has filters, search, paging and CSV export, plus 24-hour and 30-day counts. Entries are kept for `LOGIN_LOG_DAYS` days (default 90).
 
