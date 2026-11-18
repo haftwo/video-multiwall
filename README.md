@@ -32,7 +32,7 @@ There is no published image, so you build it once on the server. It takes about 
 In the Unraid terminal:
 
 ```bash
-git clone https://github.com/haftwo/-video-multiwall.git /mnt/user/appdata/multiwall-src
+git clone https://github.com/haftwo/video-multiwall.git /mnt/user/appdata/multiwall-src
 ```
 
 (No `git`? Download the ZIP from the repo page and unzip it to that folder over SMB.)
