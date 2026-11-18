@@ -159,7 +159,10 @@ class App {
           if (!s.prefixes.some((p) => req.path.startsWith(p))) continue;
           const file = path.resolve(s.dir, `.${req.path}`);
           if (!file.startsWith(s.dir + path.sep)) throw new HttpError(404, 'Not found');
-          return sendFile(res, file, 'public, max-age=3600');
+          // App code and styles must never be stale after an update; only the
+          // big third-party player and the images are cached for a while.
+          const longCache = req.path.startsWith('/vendor/') || req.path.startsWith('/img/');
+          return sendFile(res, file, longCache ? 'public, max-age=86400' : 'no-cache');
         }
       }
 
