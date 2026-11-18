@@ -45,6 +45,7 @@ entra.authority = (env.ENTRA_AUTHORITY ||
 
 module.exports = {
   appName: env.APP_NAME || 'MultiPlayer 2000',
+  version: require('../package.json').version,
   port: parseInt(env.PORT || '8080', 10),
   dataDir,
   baseUrl,

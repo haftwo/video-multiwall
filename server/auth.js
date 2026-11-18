@@ -68,6 +68,7 @@ setInterval(() => {
 function register(app) {
   app.get('/api/auth/config', (_req, res) => json(res, {
     appName: config.appName,
+    version: config.version,
     localLogin: config.localLogin,
     microsoft: config.entra.enabled,
   }));

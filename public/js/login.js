@@ -19,6 +19,7 @@
     const cfg = await MW.api('/api/auth/config');
     document.title = `Sign in · ${cfg.appName}`;
     $('appName').textContent = cfg.appName;
+    $('loginVersion').textContent = `v${cfg.version}`;
     $('msBtn').hidden = !cfg.microsoft;
     $('form').hidden = !cfg.localLogin;
     $('divider').hidden = !(cfg.microsoft && cfg.localLogin);

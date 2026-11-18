@@ -19,6 +19,7 @@
         <a href="/admin" id="adminLink" hidden>Admin console</a>
         <button id="pwBtn" hidden>Change password</button>
         <button id="logoutBtn">Sign out</button>
+        <span class="menu-version" id="menuVersion"></span>
       </div>
     </div>
   </header>
@@ -54,14 +55,15 @@
         <button id="keysBtn">Keyboard shortcuts</button>
       </div>
     </div>
+    <span class="side-version" id="sideVersion"></span>
   </aside>
 
   <main class="wall" id="wall" hidden></main>
 
   <section class="empty" id="empty" hidden>
     <div class="empty-inner">
-      <p class="eyebrow"><span class="tally"></span>&nbsp; Live</p>
       <img class="hero-logo" src="/img/logo-192.png" alt="" width="96" height="96">
+      <p class="eyebrow"><span class="tally"></span>&nbsp; Live</p>
       <h1 id="emptyTitle">MultiPlayer 2000</h1>
       <p id="emptyText">Build a wall of live streams. Add a panel, pick a channel, repeat.</p>
       <button class="btn primary big" id="emptyAdd">Pick your first channel</button>

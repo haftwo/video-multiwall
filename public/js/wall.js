@@ -549,6 +549,8 @@
     document.title = info.appName;
     $('appName').textContent = info.appName;
     $('emptyTitle').textContent = info.appName;
+    $('sideVersion').textContent = `v${info.version}`;
+    $('menuVersion').textContent = `${info.appName} v${info.version}`;
     userBtn.textContent = `${me.displayName} ▾`;
     $('adminLink').hidden = me.role !== 'admin';
     $('pwBtn').hidden = me.provider !== 'local';

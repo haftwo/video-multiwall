@@ -387,5 +387,6 @@
   me = info.user;
   document.title = `Admin · ${info.appName}`;
   $('appName').textContent = info.appName;
+  $('adminVersion').textContent = `· v${info.version}`;
   await Promise.all([loadChannels(), loadUsers()]);
 })();

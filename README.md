@@ -200,3 +200,7 @@ Notes for tinkering:
 - Playback uses [hls.js](https://github.com/video-dev/hls.js) and falls back to the browser's native HLS support (Safari, iOS, recent Chrome). It asks for the rendition that fits the panel size, so a 4×4 wall does not pull sixteen full-HD streams.
 - Browsers block autoplay with sound until you interact with the page, so after a reload any unmuted panel may come back muted. One click on its speaker restores it.
 - To run without Docker: Node 22.13 or newer, `npm run vendor` (downloads hls.js), then `npm start`.
+
+## Version
+
+The running version is shown in the side panel, the account menu, the admin console header and the sign-in page. From the Unraid terminal you can check it with `curl -s http://localhost:8095/api/version` (use your port), or in the container log. See `CHANGELOG.md` for what changed in each release.

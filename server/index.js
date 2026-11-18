@@ -35,7 +35,8 @@ app.use(auth.csrfGuard);
 // ---- pages + static files -------------------------------------------------------
 const view = (name) => path.join(root, 'views', `${name}.html`);
 
-app.get('/healthz', (_req, res) => json(res, { ok: true }));
+app.get('/healthz', (_req, res) => json(res, { ok: true, version: config.version }));
+app.get('/api/version', (_req, res) => json(res, { name: config.appName, version: config.version }));
 app.get('/login', (req, res) => (req.user ? redirect(res, '/') : sendFile(res, view('login'))));
 app.get('/', (req, res) => {
   if (req.user) return sendFile(res, view('wall'));
@@ -70,6 +71,7 @@ const bad = (msg) => { throw new HttpError(400, msg); };
 app.get('/api/me', auth.requireAuth, (req, res) => json(res, {
   user: auth.publicUser(req.user),
   appName: config.appName,
+  version: config.version,
   maxPanels: config.maxPanels,
 }));
 
@@ -236,7 +238,7 @@ app.delete('/api/admin/users/:id', auth.requireAdmin, (req, res) => {
 // ---- start --------------------------------------------------------------------
 const server = http.createServer((req, res) => app.handle(req, res));
 server.listen(config.port, () => {
-  console.log(`${config.appName} listening on port ${config.port}`);
+  console.log(`${config.appName} v${config.version} listening on port ${config.port}`);
   console.log(` Local sign-in:     ${config.localLogin ? 'on' : 'off'}`);
   console.log(` Microsoft sign-in: ${config.entra.enabled ? 'on' : 'off (set ENTRA_* variables to enable)'}`);
   if (config.entra.enabled && !config.baseUrl) {
