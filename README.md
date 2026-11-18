@@ -29,7 +29,13 @@ There is no published image, so you build it once on the server. It takes about 
 
 ### 1. Copy the project to the server
 
-Put this folder somewhere on the array, for example `/mnt/user/appdata/multiwall-src` (drag it over an SMB share, or `scp -r multiwall root@tower:/mnt/user/appdata/multiwall-src`).
+In the Unraid terminal:
+
+```bash
+git clone https://github.com/haftwo/-video-multiwall.git /mnt/user/appdata/multiwall-src
+```
+
+(No `git`? Download the ZIP from the repo page and unzip it to that folder over SMB.)
 
 ### 2. Build the image and create the data folder
 
@@ -76,7 +82,7 @@ docker compose up -d --build
 
 ### Updating
 
-Replace the source folder, run `docker build -t multiwall:latest .` again, then recreate the container: on the Docker tab click the MultiWall icon → **Edit** → **Apply** (or `docker rm -f multiwall` and repeat the `docker run` command). Your data lives in `/mnt/user/appdata/multiwall` and is untouched.
+Run `cd /mnt/user/appdata/multiwall-src && git pull`, then `docker build -t multiwall:latest .` again, then recreate the container: on the Docker tab click the MultiWall icon → **Edit** → **Apply** (or `docker rm -f multiwall` and repeat the `docker run` command). Your data lives in `/mnt/user/appdata/multiwall` and is untouched.
 
 ### Backup
 
