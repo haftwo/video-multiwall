@@ -50,7 +50,7 @@ app.get('/admin', (req, res) => {
   if (req.user.role !== 'admin') return redirect(res, '/');
   sendFile(res, view('admin'));
 });
-app.static(path.join(root, 'public'), ['/css/', '/js/', '/vendor/']);
+app.static(path.join(root, 'public'), ['/css/', '/js/', '/vendor/', '/img/']);
 
 auth.register(app);
 relay.register(app);

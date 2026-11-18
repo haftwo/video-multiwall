@@ -44,7 +44,7 @@ entra.authority = (env.ENTRA_AUTHORITY ||
   `https://login.microsoftonline.com/${entra.tenantId}/v2.0`).replace(/\/+$/, '');
 
 module.exports = {
-  appName: env.APP_NAME || 'MultiWall',
+  appName: env.APP_NAME || 'MultiPlayer 2000',
   port: parseInt(env.PORT || '8080', 10),
   dataDir,
   baseUrl,

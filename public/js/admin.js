@@ -111,7 +111,9 @@
   });
   $('addChannelBtn').addEventListener('click', () => openChannel());
 
-  // ---- M3U import
+  // ---- import: CSV (the exported channel-list format) or M3U
+  const isHttp = (u) => /^https?:\/\//i.test(u || '');
+
   function parseM3U(text) {
     const out = [];
     let pending = null;
@@ -126,7 +128,7 @@
           logoUrl: attr('tvg-logo'),
         };
       } else if (!line.startsWith('#')) {
-        if (/^https?:\/\//i.test(line)) {
+        if (isHttp(line)) {
           out.push({ ...(pending || {}), name: pending?.name || line.split('/').pop() || 'Channel', url: line });
         }
         pending = null;
@@ -135,31 +137,139 @@
     return out;
   }
 
+  // RFC 4180 CSV: quoted fields, doubled quotes, commas and newlines inside quotes.
+  function csvRows(text) {
+    const rows = [];
+    let row = [], field = '', quoted = false;
+    text = text.replace(/^﻿/, '');
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (quoted) {
+        if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
+        else if (c === '"') quoted = false;
+        else field += c;
+      } else if (c === '"') quoted = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && text[i + 1] === '\n') i++;
+        row.push(field); rows.push(row); row = []; field = '';
+      } else field += c;
+    }
+    if (field || row.length) { row.push(field); rows.push(row); }
+    return rows.filter((r) => r.some((f) => f.trim()));
+  }
+
+  function parseCSV(text) {
+    const rows = csvRows(text);
+    if (rows.length < 2) return { error: 'The CSV needs a header row and at least one channel.' };
+    const head = rows[0].map((h) => h.trim().toLowerCase());
+    const col = (...names) => head.findIndex((h) => names.some((n) => h === n || h.startsWith(`${n} `)));
+    const ci = {
+      name: col('name', 'channel'),
+      url: col('hls url', 'url', 'stream url', 'stream'),
+      group: col('group', 'category'),
+      status: col('status at capture', 'status'),
+      playback: col('browser playback', 'relay', 'proxy'),
+      logo: col('logo', 'logo url', 'tvg-logo'),
+    };
+    if (ci.name < 0 || ci.url < 0) return { error: 'The CSV header must include "Name" and "HLS URL" columns.' };
+    const get = (r, i) => (i >= 0 ? String(r[i] ?? '').trim() : '');
+    const items = [];
+    let badRows = 0;
+    for (const r of rows.slice(1)) {
+      const url = get(r, ci.url);
+      if (!isHttp(url)) { badRows++; continue; }
+      const status = get(r, ci.status).toLowerCase();
+      const playback = get(r, ci.playback).toLowerCase();
+      items.push({
+        name: get(r, ci.name) || url.split('/').pop(),
+        url,
+        category: get(r, ci.group),
+        logoUrl: get(r, ci.logo),
+        proxy: /relay|proxy|^(yes|true|1)$/.test(playback),
+        // Rows the list marked offline come in switched off, ready to re-enable later.
+        enabled: !(/offline|unreachable|frozen|dead|down/.test(status) || /offline/.test(playback)),
+      });
+    }
+    return { items, badRows };
+  }
+
+  function parseImport(text) {
+    const t = text.trimStart();
+    if (!t) return { items: [] };
+    if (t.startsWith('#EXTM3U') || t.startsWith('#EXTINF')) return { items: parseM3U(t), badRows: 0, format: 'M3U' };
+    return { ...parseCSV(t), format: 'CSV' };
+  }
+
   const importDialog = $('importDialog');
+  let pendingImport = [];
+
+  function previewImport() {
+    const res = parseImport($('importText').value);
+    $('importError').textContent = res.error || '';
+    const existing = new Set(channels.map((c) => c.url));
+    const all = res.items || [];
+    const fresh = $('importSkipDupes').checked ? all.filter((it) => !existing.has(it.url)) : all;
+    pendingImport = fresh;
+    $('importSubmit').disabled = fresh.length === 0;
+    $('importSubmit').textContent = fresh.length ? `Import ${fresh.length} channel${fresh.length === 1 ? '' : 's'}` : 'Import';
+    if (!all.length) { $('importSummary').textContent = ''; return; }
+    const relayAll = $('importProxy').checked;
+    const parts = [`${res.format}: ${all.length} channel${all.length === 1 ? '' : 's'} found`];
+    const dupes = all.length - fresh.length;
+    if (dupes) parts.push(`${dupes} already on the list (skipped)`);
+    const relayed = relayAll ? fresh.length : fresh.filter((i) => i.proxy).length;
+    if (relayed) parts.push(`${relayed} relayed`);
+    const off = fresh.filter((i) => i.enabled === false).length;
+    if (off) parts.push(`${off} marked offline (imported disabled)`);
+    if (res.badRows) parts.push(`${res.badRows} row${res.badRows === 1 ? '' : 's'} without a valid URL ignored`);
+    $('importSummary').textContent = `${parts.join(' · ')}.`;
+  }
+
   $('importBtn').addEventListener('click', () => {
-    $('importForm').reset(); $('importError').textContent = ''; importDialog.showModal();
+    $('importForm').reset();
+    $('importError').textContent = ''; $('importSummary').textContent = '';
+    pendingImport = []; $('importSubmit').disabled = true; $('importSubmit').textContent = 'Import';
+    importDialog.showModal();
   });
+  $('importFile').addEventListener('change', async () => {
+    const f = $('importFile').files[0];
+    if (!f) return;
+    if (f.size > 2 * 1024 * 1024) { $('importError').textContent = 'That file is larger than 2 MB.'; return; }
+    $('importText').value = await f.text();
+    previewImport();
+  });
+  ['input', 'change'].forEach((e) => $('importText').addEventListener(e, previewImport));
+  $('importSkipDupes').addEventListener('change', previewImport);
+  $('importProxy').addEventListener('change', previewImport);
   $('importCancel').addEventListener('click', () => importDialog.close());
+
   $('importForm').addEventListener('submit', async (ev) => {
     ev.preventDefault();
-    const items = parseM3U($('importText').value);
-    if (!items.length) { $('importError').textContent = 'No http(s) stream URLs found in that text.'; return; }
-    $('importSubmit').disabled = true;
-    const proxy = $('importProxy').checked;
+    if (!pendingImport.length) return;
+    const btn = $('importSubmit');
+    btn.disabled = true;
+    const relayAll = $('importProxy').checked;
     let order = channels.length ? Math.max(...channels.map((x) => x.sortOrder)) + 1 : 0;
     let ok = 0, failed = 0;
-    for (const it of items) {
+    for (const it of pendingImport) {
+      btn.textContent = `Importing ${ok + failed + 1} of ${pendingImport.length}…`;
       try {
         await api('/api/admin/channels', {
           method: 'POST',
-          body: { name: it.name, url: it.url, category: it.category || '', logoUrl: /^https?:\/\//i.test(it.logoUrl || '') ? it.logoUrl : '', proxy, sortOrder: order++ },
+          body: {
+            name: it.name, url: it.url, category: it.category || '',
+            logoUrl: isHttp(it.logoUrl) ? it.logoUrl : '',
+            proxy: relayAll || !!it.proxy,
+            enabled: it.enabled !== false,
+            sortOrder: order++,
+          },
         });
         ok++;
       } catch { failed++; }
     }
-    $('importSubmit').disabled = false;
     importDialog.close();
-    toast(`Imported ${ok} channel${ok === 1 ? '' : 's'}${failed ? `, ${failed} skipped` : ''}`);
+    toast(`Imported ${ok} channel${ok === 1 ? '' : 's'}${failed ? `, ${failed} failed` : ''}`);
     loadChannels();
   });
 

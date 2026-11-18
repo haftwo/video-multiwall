@@ -4,11 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Admin</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
   <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
   <header class="bar">
-    <a class="brand" href="/"><span class="tally"></span><span id="appName">MultiWall</span></a>
+    <a class="brand" href="/"><img class="brand-logo" src="/img/logo-64.png" alt="" width="28" height="28"><span id="appName">MultiPlayer 2000</span></a>
     <span class="count">Admin console</span>
     <span class="spacer"></span>
     <a class="btn" href="/">Back to wall</a>
@@ -22,7 +24,7 @@
           <h2>Stream sources</h2>
         </div>
         <div class="actions">
-          <button class="btn" id="importBtn">Import M3U</button>
+          <button class="btn" id="importBtn">Import CSV / M3U</button>
           <button class="btn primary" id="addChannelBtn">+ Add channel</button>
         </div>
       </div>
@@ -104,19 +106,26 @@
     </form>
   </dialog>
 
-  <!-- M3U import -->
+  <!-- channel import (CSV or M3U) -->
   <dialog id="importDialog" class="wide">
     <form class="dlg" id="importForm">
-      <div class="dlg-head"><h2>Import an M3U playlist</h2></div>
-      <p class="note">Paste the contents of an .m3u / .m3u8 channel list. Names, <code>group-title</code> and <code>tvg-logo</code> are picked up from each #EXTINF line.</p>
-      <textarea id="importText" rows="12" placeholder='#EXTM3U&#10;#EXTINF:-1 tvg-logo="https://…/logo.png" group-title="News",Channel name&#10;https://example.com/live/stream.m3u8' required></textarea>
-      <label class="check"><input type="checkbox" id="importProxy">
-        <span>Relay all imported channels through this server</span>
+      <div class="dlg-head"><h2>Import channels</h2></div>
+      <p class="note">Choose a <b>.csv</b> or <b>.m3u</b> file, or paste its contents below.
+        CSV needs a header row; the columns used are <code>Name</code>, <code>HLS URL</code>, <code>Group</code>,
+        <code>Status at capture</code> and <code>Browser playback</code>. Any others are ignored.</p>
+      <input type="file" id="importFile" accept=".csv,.m3u,.m3u8,text/csv,audio/x-mpegurl,application/vnd.apple.mpegurl">
+      <textarea id="importText" rows="9" placeholder="Name,Description,Group,Country,Status at capture,HLS URL,Browser playback (from test)&#10;ABC News Australia,Australian Broadcasting Corporation,News (English),AU,live,https://…/index.m3u8,Direct OK"></textarea>
+      <label class="check"><input type="checkbox" id="importSkipDupes" checked>
+        <span>Skip channels already on the list<small>Matched by stream URL, so importing the same file twice does not create copies.</small></span>
       </label>
+      <label class="check"><input type="checkbox" id="importProxy">
+        <span>Relay every imported channel through this server<small>Otherwise only rows marked "Needs relay" (CSV) are relayed.</small></span>
+      </label>
+      <p class="note" id="importSummary" role="status"></p>
       <p class="error" id="importError" role="alert"></p>
       <div class="dlg-foot">
         <button class="btn" type="button" id="importCancel">Cancel</button>
-        <button class="btn primary" type="submit" id="importSubmit">Import</button>
+        <button class="btn primary" type="submit" id="importSubmit" disabled>Import</button>
       </div>
     </form>
   </dialog>

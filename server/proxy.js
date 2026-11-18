@@ -65,7 +65,7 @@ function register(app) {
 
     let upstream;
     try {
-      const headers = { 'user-agent': 'Mozilla/5.0 (MultiWall HLS relay)' };
+      const headers = { 'user-agent': 'Mozilla/5.0 (MultiPlayer 2000 HLS relay)' };
       if (req.headers.range) headers.range = req.headers.range;
       upstream = await fetch(url, { headers, signal: abort.signal, redirect: 'follow' });
     } catch (err) {

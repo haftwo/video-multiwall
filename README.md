@@ -1,11 +1,13 @@
-# MultiWall
+# MultiPlayer 2000
+
+<img src="public/img/logo-192.png" alt="" width="96" height="96">
 
 A self-hosted multi-wall for HLS (`.m3u8`) streams. Viewers sign in, pick from the channels an admin has set up, and build their own wall of live panels.
 
 - **Wall**: add and remove panels, per-panel mute and volume, drag to rearrange, fullscreen a panel or the whole wall. Each user's wall is saved and restored on their next visit.
 - **Side panel** (collapsible, remembered per browser): volume and mute for the panel you are listening to, grid +/− to add or remove panels, numbered audio buttons to pick which panel you hear, a share link, and an Options menu (mute all, fullscreen wall, remove all, shortcuts).
 - **Share links**: the share button makes a link holding the wall's channels, their order and which panel has sound. Anyone with an account on the same server who opens it gets that wall (after signing in, if they need to).
-- **Channels**: preset by an admin in the admin console (add one at a time or paste an M3U playlist). Viewers can only choose from that list.
+- **Channels**: preset by an admin in the admin console (add one at a time, or import a CSV or M3U file). Viewers can only choose from that list.
 - **Sign-in**: local username/password accounts, Microsoft Entra ID (Azure AD) single sign-on, or both.
 - **Roles**: administrators manage channels and users; viewers only see the wall.
 - **Packaging**: one small Docker image, one data folder, no external database.
@@ -60,7 +62,7 @@ The build needs internet access once, to download Node and the hls.js player.
 cp unraid/my-multiwall.xml /boot/config/plugins/dockerMan/templates-user/
 ```
 
-Then in the Unraid web UI: **Docker → Add Container → Template → MultiWall** (under "User templates"). Set an admin password, leave the rest as-is for now, and click **Apply**.
+Then in the Unraid web UI: **Docker → Add Container → Template → MultiPlayer-2000** (under "User templates"). Set an admin password, leave the rest as-is for now, and click **Apply**.
 
 If the template route complains that it cannot pull `multiwall:latest`, start the container from the terminal instead. It appears on the Docker tab like any other:
 
@@ -72,7 +74,7 @@ docker run -d --name multiwall --restart unless-stopped \
   multiwall:latest
 ```
 
-Open `http://<unraid-ip>:8080` and sign in as `admin`. If you left the password blank, a generated one is printed in the container log (Docker tab → MultiWall icon → Logs).
+Open `http://<unraid-ip>:8080` and sign in as `admin`. If you left the password blank, a generated one is printed in the container log (Docker tab → container icon → Logs).
 
 ### Prefer Docker Compose?
 
@@ -85,7 +87,7 @@ docker compose up -d --build
 
 ### Updating
 
-Run `cd /mnt/user/appdata/multiwall-src && git pull`, then `docker build -t multiwall:latest .` again, then recreate the container: on the Docker tab click the MultiWall icon → **Edit** → **Apply** (or `docker rm -f multiwall` and repeat the `docker run` command). Your data lives in `/mnt/user/appdata/multiwall` and is untouched.
+Run `cd /mnt/user/appdata/multiwall-src && git pull`, then `docker build -t multiwall:latest .` again, then recreate the container: on the Docker tab click the container icon → **Edit** → **Apply** (or `docker rm -f multiwall` and repeat the `docker run` command). Your data lives in `/mnt/user/appdata/multiwall` and is untouched.
 
 ### Backup
 
@@ -98,7 +100,19 @@ Everything is in `/mnt/user/appdata/multiwall` (`multiwall.db` and `session.secr
 Sign in as an admin, open the menu (top right) → **Admin console**.
 
 - **Add channel**: name, HLS URL, optional category, logo and sort order. **Test stream** tries the URL from your browser so you can see whether it plays before saving.
-- **Import M3U**: paste a playlist; names, `group-title` and `tvg-logo` are read from each `#EXTINF` line.
+- **Import CSV / M3U**: choose a file or paste its contents. You see a summary before anything is added, and channels already on the list (same stream URL) are skipped, so re-importing an updated file only adds the new ones.
+  - **CSV** needs a header row. Columns used (others are ignored):
+
+    | Column | Meaning |
+    | --- | --- |
+    | `Name` | Channel name (required) |
+    | `HLS URL` | The `.m3u8` address (required; `URL` or `Stream URL` also work) |
+    | `Group` | Category shown as a filter in the channel picker (`Category` also works) |
+    | `Status at capture` | `offline`, `unreachable` or `frozen` imports the channel switched off |
+    | `Browser playback` | `Needs relay` imports the channel with the relay switched on |
+    | `Logo` | Optional logo image URL |
+
+  - **M3U**: names, `group-title` and `tvg-logo` are read from each `#EXTINF` line.
 - Three public demo streams are added on first start so the wall is not empty. Delete them when you have your own.
 
 ### When a stream will not play: the relay
@@ -116,7 +130,7 @@ The relay is not an open proxy: it only serves signed URLs that came from an adm
 
 ## Microsoft sign-in (Entra ID / Azure AD)
 
-Microsoft requires the redirect address to be `https://` (plain `http://` is only allowed for `localhost`), so put MultiWall behind a reverse proxy with a certificate first (Nginx Proxy Manager, SWAG, Traefik or a Cloudflare Tunnel all work; point it at `http://<unraid-ip>:8080`).
+Microsoft requires the redirect address to be `https://` (plain `http://` is only allowed for `localhost`), so put the app behind a reverse proxy with a certificate first (Nginx Proxy Manager, SWAG, Traefik or a Cloudflare Tunnel all work; point it at `http://<unraid-ip>:<port>`).
 
 1. In the [Entra admin centre](https://entra.microsoft.com): **Applications → App registrations → New registration**.
    - Supported account types: *Accounts in this organizational directory only*.
@@ -157,7 +171,7 @@ All settings are environment variables; see `.env.example` for the annotated lis
 | `ENTRA_ALLOWED_DOMAINS` | none | Restrict Microsoft sign-in to these email domains |
 | `LOCAL_LOGIN_ENABLED` | `true` | Show the username/password form |
 | `MAX_PANELS` | `16` | Panel limit per wall (1–36) |
-| `APP_NAME` | `MultiWall` | Name shown in the UI |
+| `APP_NAME` | `MultiPlayer 2000` | Name shown in the UI |
 | `SESSION_DAYS` | `7` | How long a sign-in lasts |
 | `SEED_DEMO_CHANNELS` | `true` | Add demo streams on first start |
 | `PORT` | `8080` | Port inside the container |
